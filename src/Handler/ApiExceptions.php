@@ -126,7 +126,6 @@ class ApiExceptions extends Injectable
 
         if (PHP_SAPI == 'cli') {
             print_r($response);
-            die();
         } else {
             $this->app->response->setJsonContent($response);
             $this->app->response->send();
