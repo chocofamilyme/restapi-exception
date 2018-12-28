@@ -129,7 +129,10 @@ class ApiExceptions extends Injectable
         } else {
             $this->app->response->setJsonContent($response);
             $this->app->response->send();
-            $this->app->stop();
+
+            if($this->app instanceof \Phalcon\Mvc\Micro) {
+                $this->app->stop();
+            }
         }
     }
 
