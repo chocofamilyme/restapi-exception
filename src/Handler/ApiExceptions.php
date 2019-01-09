@@ -60,8 +60,10 @@ class ApiExceptions extends Injectable
      * Custom Exception handler
      *
      * @param \Throwable $exception
+     *
+     * @return array
      */
-    public function handleExceptions(\Throwable $exception)
+    public function handleExceptions(\Throwable $exception): array
     {
         $code       = $exception->getCode();
         $message    = $exception->getMessage();
@@ -88,7 +90,7 @@ class ApiExceptions extends Injectable
             }
         }
 
-        $this->apiResponse($code, $message, $debug);
+        return $this->apiResponse($code, $message, $debug);
     }
 
     /**
@@ -112,8 +114,10 @@ class ApiExceptions extends Injectable
      * @param int    $code
      * @param string $message
      * @param array  $debug
+     *
+     * @return array
      */
-    private function apiResponse(int $code = 500, string $message = 'Internal Server Error', array $debug = [])
+    private function apiResponse(int $code = 500, string $message = 'Internal Server Error', array $debug = []): array
     {
         $data = null;
 
@@ -130,10 +134,12 @@ class ApiExceptions extends Injectable
             $this->app->response->setJsonContent($response);
             $this->app->response->send();
 
-            if($this->app instanceof \Phalcon\Mvc\Micro) {
+            if ($this->app instanceof \Phalcon\Mvc\Micro) {
                 $this->app->stop();
             }
         }
+
+        return $response;
     }
 
     /**
