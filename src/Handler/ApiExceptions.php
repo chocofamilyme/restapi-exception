@@ -74,7 +74,9 @@ class ApiExceptions extends Injectable
 
         if ($exception instanceof BaseException && $exception->getDebug()) {
             foreach ($exception->getDebug() as $key => $value) {
-                $this->sentry->setTag($key, $value);
+                if ($value != '' && $value !== false) {
+                    $this->sentry->setTag($key, $value);
+                }
             }
 
             $messageLog .= PHP_EOL.$exception->getDebugAsString();
