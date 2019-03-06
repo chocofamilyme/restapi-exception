@@ -74,7 +74,7 @@ class ApiExceptions extends Injectable
 
         if ($exception instanceof BaseException && $exception->getDebug()) {
             foreach ($exception->getDebug() as $key => $value) {
-                if ($value != '' && $value !== false) {
+                if (!empty($value)) {
                     $this->sentry->setTag($key, $value);
                 }
             }
