@@ -2,8 +2,8 @@
 
 namespace Chocofamily\Exception\Handler;
 
+use Chocofamily\Exception\RestAPIException;
 use Phalcon\Di\Injectable;
-use Chocofamily\Exception\BaseException;
 use Chocofamily\Exception\NoticeException;
 use Phalcon\Logger\AdapterInterface;
 
@@ -71,15 +71,21 @@ class ApiExceptions extends Injectable
         $line       = $exception->getLine();
         $messageLog = sprintf('%d %s in %s:%s', $code, $message, $file, $line);
         $debug      = [];
+        $data       = [];
 
-        if ($exception instanceof BaseException && $exception->getDebug()) {
-            foreach ($exception->getDebug() as $key => $value) {
-                if (!empty($value)) {
-                    $this->sentry->setTag($key, $value);
+        if ($exception instanceof RestAPIException) {
+            if ($debug = $exception->getDebug()) {
+                foreach ($debug as $key => $value) {
+                    if (false == empty($value)) {
+                        $this->sentry->setTag($key, $value);
+                    }
                 }
+
+                $messageLog .= PHP_EOL.$exception->getDebugAsString();
             }
 
-            $messageLog .= PHP_EOL.$exception->getDebugAsString();
+            $data = $exception->getData();
+
         }
 
         if (false == $exception instanceof NoticeException) {
@@ -92,7 +98,7 @@ class ApiExceptions extends Injectable
             }
         }
 
-        return $this->apiResponse($code, $message, $debug);
+        return $this->apiResponse($code, $message, $debug, $data);
     }
 
     /**
@@ -117,14 +123,18 @@ class ApiExceptions extends Injectable
      * @param string $message
      * @param array  $debug
      *
+     * @param array  $data
+     *
      * @return array
      */
-    private function apiResponse(int $code = 500, string $message = 'Internal Server Error', array $debug = []): array
-    {
-        $data = null;
-
+    private function apiResponse(
+        int $code = 500,
+        string $message = 'Internal Server Error',
+        array $debug = [],
+        $data = []
+    ):
+    array {
         if (self::DEVELOPMENT === $this->environment && $debug) {
-            $data          = [];
             $data['debug'] = $debug;
         }
 
@@ -146,14 +156,18 @@ class ApiExceptions extends Injectable
 
     /**
      * @param string $message
-     * @param null   $data
+     * @param array  $data
      * @param int    $error_code
      * @param string $status
      *
      * @return array
      */
-    public function response(string $message, $data = null, $error_code = 0, string $status = 'success'): array
+    public function response(string $message, $data = [], int $error_code = 0, string $status = 'success'): array
     {
+        if (is_array($data) && empty($data)) {
+            $data = null;
+        }
+
         return [
             'error_code' => $error_code,
             'status'     => $status,

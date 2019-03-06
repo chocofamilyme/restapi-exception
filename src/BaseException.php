@@ -7,12 +7,26 @@ use Throwable;
 class BaseException extends \Exception implements RestAPIException
 {
 
+    /**
+     * @var array
+     */
     private $debug = [];
 
-    public function __construct(string $message = "", int $code = 0, array $debug = [], Throwable $previous = null)
-    {
+    /**
+     * @var array
+     */
+    private $data = [];
+
+    public function __construct(
+        string $message = "",
+        int $code = 0,
+        array $debug = [],
+        Throwable $previous = null,
+        $data = []
+    ) {
         parent::__construct($message, $code, $previous);
         $this->setDebug($debug);
+        $this->setData($data);
     }
 
     /**
@@ -29,6 +43,22 @@ class BaseException extends \Exception implements RestAPIException
     public function setDebug(array $debug = [])
     {
         $this->debug = $debug;
+    }
+
+    /**
+     * @return array
+     */
+    public function getData(): array
+    {
+        return $this->data;
+    }
+
+    /**
+     * @param array $data
+     */
+    public function setData(array $data = [])
+    {
+        $this->data = $data;
     }
 
     /**
