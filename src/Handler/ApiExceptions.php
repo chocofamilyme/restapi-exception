@@ -90,7 +90,7 @@ class ApiExceptions extends Injectable
 
         if (false == $exception instanceof NoticeException) {
             $this->sentry->logException($exception, [], \Phalcon\Logger::ERROR);
-            $this->logger->error($messageLog.PHP_EOL.$exception->getTraceAsString());
+            $this->logger->error($messageLog.PHP_EOL.substr($exception->getTraceAsString(), 0, 500));
 
             if (self::PRODUCTION === $this->environment) {
                 $code    = 500;
