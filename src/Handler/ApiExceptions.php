@@ -14,8 +14,9 @@ use Phalcon\Logger\AdapterInterface;
  */
 class ApiExceptions extends Injectable
 {
-    const PRODUCTION  = true;
-    const DEVELOPMENT = false;
+    const PRODUCTION         = true;
+    const DEVELOPMENT        = false;
+    const DEFAULT_ERROR_CODE = 500;
 
     /** @var  AdapterInterface */
     private $logger;
@@ -65,7 +66,7 @@ class ApiExceptions extends Injectable
      */
     public function handleExceptions(\Throwable $exception): array
     {
-        $code       = $exception->getCode();
+        $code       = $exception->getCode() ?: self::DEFAULT_ERROR_CODE;
         $message    = $exception->getMessage();
         $file       = $exception->getFile();
         $line       = $exception->getLine();
@@ -85,16 +86,15 @@ class ApiExceptions extends Injectable
             }
 
             $data = $exception->getData();
-
         }
 
         if (false == $exception instanceof NoticeException) {
             if (false == $exception instanceof \PDOException) {
                 $messageLog .= PHP_EOL.$exception->getTraceAsString();
             }
-            
+
             $this->sentry->logException($exception, [], \Phalcon\Logger::ERROR);
-            $this->logger->error($messageLog.PHP_EOL.substr($exception->getTraceAsString(), 0, 500));
+            $this->logger->error($messageLog);
 
             if (self::PRODUCTION === $this->environment) {
                 $code    = 500;
@@ -117,7 +117,9 @@ class ApiExceptions extends Injectable
      */
     public function handleErrors(int $errorNumber, string $errorString, string $errorFile, int $errorLine)
     {
-        if (error_reporting() && $errorNumber) {
+        if (error_reporting()) {
+            $errorNumber = $errorNumber ?: self::DEFAULT_ERROR_CODE;
+
             throw new \ErrorException($errorString, $errorNumber, 1, $errorFile, $errorLine);
         }
     }
@@ -136,8 +138,7 @@ class ApiExceptions extends Injectable
         string $message = 'Internal Server Error',
         array $debug = [],
         $data = []
-    ):
-    array {
+    ): array {
         if (self::DEVELOPMENT === $this->environment && $debug) {
             $data['debug'] = $debug;
         }
