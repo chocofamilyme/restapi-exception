@@ -90,7 +90,7 @@ class ApiExceptions extends Injectable
 
         if (false == $exception instanceof NoticeException) {
             if (false == $exception instanceof \PDOException) {
-                $messageLog .= PHP_EOL.$exception->getTraceAsString();
+                $messageLog .= PHP_EOL.substr($exception->getTraceAsString(), 0, 500);
             }
 
             $this->sentry->logException($exception, [], \Phalcon\Logger::ERROR);
