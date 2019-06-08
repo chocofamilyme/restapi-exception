@@ -149,6 +149,8 @@ class ApiExceptions extends Injectable
             print_r($response);
         } else {
             $this->app->response->setJsonContent($response);
+            $this->app->response->setHeader('Cache-Control', 'no-store');
+            $this->app->response->setHeader('Pragma', 'no-cache');
             $this->app->response->send();
 
             if ($this->app instanceof \Phalcon\Mvc\Micro) {
