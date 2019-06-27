@@ -10,6 +10,8 @@ use Phalcon\Logger\AdapterInterface;
 
 class ExceptionIntervention
 {
+    const DEFAULT_ERROR_CODE = 500;
+
     /**
      * @var bool
      */
@@ -92,7 +94,7 @@ class ExceptionIntervention
 
     private function setExceptionParameters() : void
     {
-        $this->code = $this->exception->getCode();
+        $this->code = $this->exception->getCode() ?: self::DEFAULT_ERROR_CODE;
         $this->message = $this->exception->getMessage();
         $this->debug = [];
         $this->data = [];
@@ -125,7 +127,7 @@ class ExceptionIntervention
         }
 
         if (!$this->exception instanceof PDOException) {
-            $this->messageLog .= PHP_EOL . $this->exception->getTraceAsString();
+            $this->messageLog .= PHP_EOL . substr($this->exception->getTraceAsString(), 0, 500);
         }
 
         $this->sentryLogException();
@@ -179,7 +181,7 @@ class ExceptionIntervention
 
     private function loggerLogError() : void
     {
-        $this->logger->error($this->messageLog . PHP_EOL . substr($this->exception->getTraceAsString(), 0, 500));
+        $this->logger->error($this->messageLog);
     }
 
     /**
