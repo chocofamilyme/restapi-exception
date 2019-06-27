@@ -80,7 +80,6 @@ class ExceptionIntervention
         $this->sentryLogException();
         $this->loggerLogError();
         $this->rewriteCodeAndMessageOnProductionEnvironment();
-
     }
 
     private function rewriteCodeAndMessageOnProductionEnvironment()
