@@ -15,9 +15,10 @@ class ExceptionIntervention
     private $exception;
     private $logger;
     private $sentry;
-    private $listOfExceptionsShownInProduction = [
-        \League\OAuth2\Server\Exception\OAuthServerException::class
-    ];
+    /**
+     * @var array example -> [\League\OAuth2\Server\Exception\OAuthServerException::class]
+     */
+    private $listOfExceptionsShownInProduction = [];
 
     private $code;
     private $message;
@@ -27,13 +28,15 @@ class ExceptionIntervention
     private $line;
     private $messageLog;
 
-    public function __construct($productionEnvironment, Throwable $exception, AdapterInterface $logger, Sentry $sentry)
+    public function __construct($productionEnvironment, AdapterInterface $logger, Sentry $sentry)
     {
         $this->productionEnvironment = $productionEnvironment;
-        $this->exception = $exception;
         $this->logger = $logger;
         $this->sentry = $sentry;
+    }
 
+    public function handle()
+    {
         $this->setExceptionParameters();
         $this->handleIfRestApiException();
         $this->handleIfNotNoticeException();
@@ -110,6 +113,11 @@ class ExceptionIntervention
         return false;
     }
 
+    public function setListOfExceptionsShownInProduction(array $list)
+    {
+        $this->listOfExceptionsShownInProduction = $list;
+    }
+
     private function sentryLogException()
     {
         $this->sentry->logException($this->exception, [], \Phalcon\Logger::ERROR);
@@ -138,5 +146,10 @@ class ExceptionIntervention
     public function getData()
     {
         return $this->data;
+    }
+
+    public function setException(\Throwable $exception)
+    {
+        $this->exception = $exception;
     }
 }

@@ -29,12 +29,15 @@ class ApiExceptions extends Injectable
      */
     private $app;
 
+    private $exceptionIntervention;
+
     public function __construct($app, $productionEnvironment = true)
     {
         $this->app = $app;
         $this->logger = $this->getDI()->get('logger');
         $this->sentry = $this->getDI()->getShared('sentry');
         $this->productionEnvironment = $productionEnvironment;
+        $this->exceptionIntervention = new ExceptionIntervention($this->isProductionEnvironment(), $this->logger, $this->sentry);
     }
 
     /**
@@ -61,13 +64,23 @@ class ApiExceptions extends Injectable
      */
     public function handleExceptions(\Throwable $exception): array
     {
-        $exceptionIntervention = new ExceptionIntervention($this->isProductionEnvironment(), $exception, $this->logger, $this->sentry);
-        $code = $exceptionIntervention->getCode();
-        $message = $exceptionIntervention->getMessage();
-        $debug = $exceptionIntervention->getDebug();
-        $data = $exceptionIntervention->getData();
+        $this->exceptionIntervention->setException($exception);
+        $this->exceptionIntervention->handle();
+
+        $code = $this->exceptionIntervention->getCode();
+        $message = $this->exceptionIntervention->getMessage();
+        $debug = $this->exceptionIntervention->getDebug();
+        $data = $this->exceptionIntervention->getData();
 
         return $this->apiResponse($code, $message, $debug, $data);
+    }
+
+    /**
+     * @param array $list
+     */
+    public function setListOfExceptionsShownInProduction(array $list)
+    {
+        $this->exceptionIntervention->setListOfExceptionsShownInProduction($list);
     }
 
     /**
