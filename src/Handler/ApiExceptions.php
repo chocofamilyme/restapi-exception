@@ -2,9 +2,8 @@
 
 namespace Chocofamily\Exception\Handler;
 
-use Chocofamily\Exception\RestAPIException;
+use Chocofamily\Logger\Adapter\Sentry;
 use Phalcon\Di\Injectable;
-use Chocofamily\Exception\NoticeException;
 use Phalcon\Logger\AdapterInterface;
 
 /**
@@ -14,18 +13,14 @@ use Phalcon\Logger\AdapterInterface;
  */
 class ApiExceptions extends Injectable
 {
-    const PRODUCTION         = true;
-    const DEVELOPMENT        = false;
-    const DEFAULT_ERROR_CODE = 500;
-
     /** @var  AdapterInterface */
     private $logger;
 
-    /** @var \Chocofamily\Logger\Adapter\Sentry */
+    /** @var Sentry */
     private $sentry;
 
     /** @var  bool */
-    private $environment;
+    private $productionEnvironment;
 
     /**
      * The internal application core.
@@ -34,12 +29,12 @@ class ApiExceptions extends Injectable
      */
     private $app;
 
-    public function __construct($app, $environment = self::DEVELOPMENT)
+    public function __construct($app, $productionEnvironment = true)
     {
-        $this->app         = $app;
-        $this->logger      = $this->getDI()->get('logger');
-        $this->sentry      = $this->getDI()->getShared('sentry');
-        $this->environment = $environment;
+        $this->app = $app;
+        $this->logger = $this->getDI()->get('logger');
+        $this->sentry = $this->getDI()->getShared('sentry');
+        $this->productionEnvironment = $productionEnvironment;
     }
 
     /**
@@ -48,7 +43,7 @@ class ApiExceptions extends Injectable
     public function register()
     {
         /** if development enable error displaying */
-        ini_set('display_errors', self::DEVELOPMENT === $this->environment);
+        ini_set('display_errors', $this->isDevelopmentEnvironment());
         /** report every error, notice, warning */
         error_reporting(E_ALL);
         /** Register error handler */
@@ -66,41 +61,11 @@ class ApiExceptions extends Injectable
      */
     public function handleExceptions(\Throwable $exception): array
     {
-        $code       = $exception->getCode() ?: self::DEFAULT_ERROR_CODE;
-        $message    = $exception->getMessage();
-        $file       = $exception->getFile();
-        $line       = $exception->getLine();
-        $messageLog = sprintf('%d %s in %s:%s', $code, $message, $file, $line);
-        $debug      = [];
-        $data       = [];
-
-        if ($exception instanceof RestAPIException) {
-            if ($debug = $exception->getDebug()) {
-                foreach ($debug as $key => $value) {
-                    if (false == empty($value)) {
-                        $this->sentry->setTag($key, $value);
-                    }
-                }
-
-                $messageLog .= PHP_EOL.$exception->getDebugAsString();
-            }
-
-            $data = $exception->getData();
-        }
-
-        if (false == $exception instanceof NoticeException) {
-            if (false == $exception instanceof \PDOException) {
-                $messageLog .= PHP_EOL.substr($exception->getTraceAsString(), 0, 500);
-            }
-
-            $this->sentry->logException($exception, [], \Phalcon\Logger::ERROR);
-            $this->logger->error($messageLog);
-
-            if (self::PRODUCTION === $this->environment) {
-                $code    = 500;
-                $message = 'Ошибка сервера';
-            }
-        }
+        $exceptionIntervention = new ExceptionIntervention($this->isProductionEnvironment(), $exception, $this->logger, $this->sentry);
+        $code = $exceptionIntervention->getCode();
+        $message = $exceptionIntervention->getMessage();
+        $debug = $exceptionIntervention->getDebug();
+        $data = $exceptionIntervention->getData();
 
         return $this->apiResponse($code, $message, $debug, $data);
     }
@@ -117,9 +82,7 @@ class ApiExceptions extends Injectable
      */
     public function handleErrors(int $errorNumber, string $errorString, string $errorFile, int $errorLine)
     {
-        if (error_reporting()) {
-            $errorNumber = $errorNumber ?: self::DEFAULT_ERROR_CODE;
-
+        if (error_reporting() && $errorNumber != 0) {
             throw new \ErrorException($errorString, $errorNumber, 1, $errorFile, $errorLine);
         }
     }
@@ -138,19 +101,15 @@ class ApiExceptions extends Injectable
         string $message = 'Internal Server Error',
         array $debug = [],
         $data = []
-    ): array {
-        if (self::DEVELOPMENT === $this->environment && $debug) {
-            $data['debug'] = $debug;
-        }
-
+    ): array
+    {
+        $data = $this->setDataDebugInDevelopmentEnvironment($data, $debug);
         $response = $this->response($message, $data, $code, 'error');
 
-        if (PHP_SAPI == 'cli') {
+        if ($this->isCliApplication()) {
             print_r($response);
         } else {
             $this->app->response->setJsonContent($response);
-            $this->app->response->setHeader('Cache-Control', 'no-store');
-            $this->app->response->setHeader('Pragma', 'no-cache');
             $this->app->response->send();
 
             if ($this->app instanceof \Phalcon\Mvc\Micro) {
@@ -159,6 +118,28 @@ class ApiExceptions extends Injectable
         }
 
         return $response;
+    }
+
+    /**
+     * @param $data
+     * @param $debug
+     * @return mixed
+     */
+    private function setDataDebugInDevelopmentEnvironment($data, $debug)
+    {
+        if ($this->isDevelopmentEnvironment() && !empty($debug)) {
+            $data['debug'] = $debug;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return bool
+     */
+    private function isCliApplication()
+    {
+        return 'cli' == php_sapi_name();
     }
 
     /**
@@ -171,9 +152,7 @@ class ApiExceptions extends Injectable
      */
     public function response(string $message, $data = [], int $error_code = 0, string $status = 'success'): array
     {
-        if (is_array($data) && empty($data)) {
-            $data = null;
-        }
+        $data = $this->nullDataIfEmpty($data);
 
         return [
             'error_code' => $error_code,
@@ -181,5 +160,42 @@ class ApiExceptions extends Injectable
             'message'    => $message,
             'data'       => $data,
         ];
+    }
+
+    /**
+     * @param $data
+     * @return |null
+     */
+    private function nullDataIfEmpty($data)
+    {
+        if (is_array($data) && empty($data)) {
+            $data = null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return bool
+     */
+    private function isDevelopmentEnvironment()
+    {
+        if ($this->productionEnvironment === false) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    private function isProductionEnvironment()
+    {
+        if ($this->productionEnvironment === true) {
+            return true;
+        }
+
+        return false;
     }
 }
