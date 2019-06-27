@@ -29,6 +29,9 @@ class ApiExceptions extends Injectable
      */
     private $app;
 
+    /**
+     * @var ExceptionIntervention
+     */
     private $exceptionIntervention;
 
     public function __construct($app, $productionEnvironment = true)
