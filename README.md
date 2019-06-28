@@ -19,3 +19,19 @@ return [
     $apiExceptions->register();
 ];
 ````
+
+## Показывать определенные исключения на бою
+**Внимание это только пример!**
+````php
+return [
+    $di  = new Phalcon\Di\FactoryDefault()
+    $app = new Phalcon\Mvc\Micro($di);
+    
+    $apiExceptions = new ApiExceptions($app, true);
+    $apiExceptions->setListOfExceptionsShownInProduction([
+        \Exception::class,
+        \PDOException::class
+    ]);
+    $apiExceptions->register();
+];
+````
