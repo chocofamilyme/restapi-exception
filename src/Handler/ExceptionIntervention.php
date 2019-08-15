@@ -127,7 +127,7 @@ class ExceptionIntervention
         }
 
         if (!$this->exception instanceof PDOException) {
-            $this->messageLog .= PHP_EOL . substr($this->exception->getTraceAsString(), 0, 500);
+            $this->messageLog .= PHP_EOL.$this->exception->getTraceAsString();
         }
 
         $this->sentryLogException();
