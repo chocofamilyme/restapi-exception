@@ -89,7 +89,7 @@ class ExceptionIntervention
     {
         $this->setExceptionParameters();
         $this->handleIfRestApiException();
-        $this->handleIfNotNoticeException();
+        $this->handleIfNotShownException();
     }
 
     private function setExceptionParameters() : void
@@ -120,9 +120,9 @@ class ExceptionIntervention
         }
     }
 
-    private function handleIfNotNoticeException() : void
+    private function handleIfNotShownException() : void
     {
-        if ($this->exception instanceof NoticeException) {
+        if ($this->isShownExceptionInProduction()) {
             return;
         }
 
@@ -137,7 +137,7 @@ class ExceptionIntervention
 
     private function rewriteCodeAndMessageOnProductionEnvironment() : void
     {
-        if ($this->isProductionEnvironment() && $this->hideExceptionInProduction()) {
+        if ($this->isProductionEnvironment()) {
             $this->code = 500;
             $this->message = 'Ошибка сервера';
         }
@@ -146,15 +146,15 @@ class ExceptionIntervention
     /**
      * @return bool
      */
-    private function hideExceptionInProduction() : bool
+    private function isShownExceptionInProduction() : bool
     {
         foreach ($this->listOfExceptionsShownInProduction as $exceptionShownInProduction) {
             if ($this->exception instanceof $exceptionShownInProduction) {
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     /**
