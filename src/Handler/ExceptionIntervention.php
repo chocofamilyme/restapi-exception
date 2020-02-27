@@ -6,6 +6,8 @@ use Chocofamily\Exception\NoticeException;
 use Chocofamily\Exception\RestAPIException;
 use Chocofamily\Logger\Adapter\Sentry;
 use PDOException;
+use Phalcon\Config;
+use Phalcon\Di;
 use Phalcon\Logger\AdapterInterface;
 
 class ExceptionIntervention
@@ -31,11 +33,6 @@ class ExceptionIntervention
      * @var Sentry
      */
     private $sentry;
-
-    /**
-     * @var array
-     */
-    private $listOfExceptionsShownInProduction = [];
 
     /**
      * @var int
@@ -72,6 +69,8 @@ class ExceptionIntervention
      */
     private $messageLog;
 
+    private $config;
+
     /**
      * ExceptionIntervention constructor.
      * @param bool $productionEnvironment
@@ -83,13 +82,15 @@ class ExceptionIntervention
         $this->productionEnvironment = $productionEnvironment;
         $this->logger = $logger;
         $this->sentry = $sentry;
+        $this->config = Di::getDefault()->get('config');
     }
 
     public function handle() : void
     {
         $this->setExceptionParameters();
         $this->handleIfRestApiException();
-        $this->handleIfNotShownException();
+        $this->handleIfNotPDOException();
+        $this->logException();
     }
 
     private function setExceptionParameters() : void
@@ -120,19 +121,21 @@ class ExceptionIntervention
         }
     }
 
-    private function handleIfNotShownException() : void
+    private function handleIfNotPDOException()
     {
-        if ($this->isShownExceptionInProduction()) {
-            return;
-        }
-
         if (!$this->exception instanceof PDOException) {
             $this->messageLog .= PHP_EOL.$this->exception->getTraceAsString();
         }
+    }
 
+    private function logException() : void
+    {
         $this->sentryLogException();
         $this->loggerLogError();
-        $this->rewriteCodeAndMessageOnProductionEnvironment();
+
+        if (false === $this->isShownExceptionInProduction()) {
+            $this->rewriteCodeAndMessageOnProductionEnvironment();
+        }
     }
 
     private function rewriteCodeAndMessageOnProductionEnvironment() : void
@@ -148,8 +151,10 @@ class ExceptionIntervention
      */
     private function isShownExceptionInProduction() : bool
     {
-        foreach ($this->listOfExceptionsShownInProduction as $exceptionShownInProduction) {
-            if ($this->exception instanceof $exceptionShownInProduction) {
+        $showInProduction = $this->config->get('exceptions', new Config())->get('showInProduction')
+            ?? [NoticeException::class, ];
+        foreach ($showInProduction as $show) {
+            if ($this->exception instanceof $show) {
                 return true;
             }
         }
@@ -169,11 +174,6 @@ class ExceptionIntervention
         return false;
     }
 
-    public function setListOfExceptionsShownInProduction(array $list) : void
-    {
-        $this->listOfExceptionsShownInProduction = $list;
-    }
-
     private function sentryLogException() : void
     {
         $this->sentry->logException($this->exception, [], \Phalcon\Logger::ERROR);
@@ -181,6 +181,14 @@ class ExceptionIntervention
 
     private function loggerLogError() : void
     {
+        $dontReport = $this->config->get('logger', new Config())->get('dontReport')
+            ?? [NoticeException::class, ];
+        foreach ($dontReport as $ignore) {
+            if ($this->exception instanceof $ignore) {
+                return;
+            }
+        }
+
         $this->logger->error($this->messageLog);
     }
 
