@@ -39,14 +39,12 @@ return [
 **Внимание это только пример!**
 ````php
 return [
-    return [
-        # Ваша конфигурация
-        
-        'dontReport'   => [
-            \PDOException::class,
-            \Chocofamily\Exception\NoticeException::class
-        ],
-    ];
+    # Ваша конфигурация
+    
+    'dontReport'   => [
+        \PDOException::class,
+        \Chocofamily\Exception\NoticeException::class
+    ],
 ];
 ````
 #### Sentry
