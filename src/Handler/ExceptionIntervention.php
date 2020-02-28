@@ -151,8 +151,7 @@ class ExceptionIntervention
      */
     private function isShownExceptionInProduction() : bool
     {
-        $showInProduction = $this->config->get('exceptions', new Config())->get('showInProduction')
-            ?? [NoticeException::class, ];
+        $showInProduction = $this->config->get('exceptions', new Config())->get('showInProduction', [NoticeException::class, ]);
         foreach ($showInProduction as $show) {
             if ($this->exception instanceof $show) {
                 return true;
@@ -181,8 +180,7 @@ class ExceptionIntervention
 
     private function loggerLogError() : void
     {
-        $dontReport = $this->config->get('logger', new Config())->get('dontReport')
-            ?? [NoticeException::class, ];
+        $dontReport = $this->config->get('logger', new Config())->get('dontReport', [NoticeException::class, ]);
         foreach ($dontReport as $ignore) {
             if ($this->exception instanceof $ignore) {
                 return;
