@@ -79,14 +79,6 @@ class ApiExceptions extends Injectable
     }
 
     /**
-     * @param array $list
-     */
-    public function setListOfExceptionsShownInProduction(array $list)
-    {
-        $this->exceptionIntervention->setListOfExceptionsShownInProduction($list);
-    }
-
-    /**
      * Custom error handler
      *
      * @param int    $errorNumber
