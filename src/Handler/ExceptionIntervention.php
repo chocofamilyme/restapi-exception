@@ -5,7 +5,6 @@ namespace Chocofamily\Exception\Handler;
 use Chocofamily\Exception\NoticeException;
 use Chocofamily\Exception\RestAPIException;
 use Chocofamily\Logger\Adapter\Sentry;
-use PDOException;
 use Phalcon\Config;
 use Phalcon\Di;
 use Phalcon\Logger\AdapterInterface;
@@ -20,7 +19,7 @@ class ExceptionIntervention
     private $productionEnvironment;
 
     /**
-     * @var
+     * @var \Throwable
      */
     private $exception;
 
@@ -65,46 +64,43 @@ class ExceptionIntervention
     private $line;
 
     /**
-     * @var string
+     * @var Config
      */
-    private $messageLog;
-
     private $config;
 
     /**
      * ExceptionIntervention constructor.
-     * @param bool $productionEnvironment
+     *
+     * @param bool             $productionEnvironment
      * @param AdapterInterface $logger
-     * @param Sentry $sentry
+     * @param Sentry           $sentry
      */
     public function __construct(bool $productionEnvironment, AdapterInterface $logger, Sentry $sentry)
     {
         $this->productionEnvironment = $productionEnvironment;
-        $this->logger = $logger;
-        $this->sentry = $sentry;
-        $this->config = Di::getDefault()->get('config');
+        $this->logger                = $logger;
+        $this->sentry                = $sentry;
+        $this->config                = Di::getDefault()->get('config');
     }
 
-    public function handle() : void
+    public function handle(): void
     {
         $this->setExceptionParameters();
         $this->handleIfRestApiException();
-        $this->handleIfNotPDOException();
         $this->logException();
     }
 
-    private function setExceptionParameters() : void
+    private function setExceptionParameters(): void
     {
-        $this->code = $this->exception->getCode() ?: self::DEFAULT_ERROR_CODE;
-        $this->message = $this->exception->getMessage();
-        $this->debug = [];
-        $this->data = [];
-        $this->file = $this->exception->getFile();
-        $this->line = $this->exception->getLine();
-        $this->messageLog = sprintf('%d %s in %s:%s', $this->code, $this->message, $this->file, $this->line);
+        $this->code       = $this->exception->getCode() ?: self::DEFAULT_ERROR_CODE;
+        $this->message    = $this->exception->getMessage();
+        $this->debug      = [];
+        $this->data       = [];
+        $this->file       = $this->exception->getFile();
+        $this->line       = $this->exception->getLine();
     }
 
-    private function handleIfRestApiException() : void
+    private function handleIfRestApiException(): void
     {
         if ($this->exception instanceof RestAPIException) {
             if ($debug = $this->exception->getDebug()) {
@@ -113,22 +109,13 @@ class ExceptionIntervention
                         $this->sentry->setTag($key, $value);
                     }
                 }
-
-                $this->messageLog .= PHP_EOL . $this->exception->getDebugAsString();
             }
 
             $this->data = $this->exception->getData();
         }
     }
 
-    private function handleIfNotPDOException()
-    {
-        if (!$this->exception instanceof PDOException) {
-            $this->messageLog .= PHP_EOL.$this->exception->getTraceAsString();
-        }
-    }
-
-    private function logException() : void
+    private function logException(): void
     {
         $this->sentryLogException();
         $this->loggerLogError();
@@ -138,10 +125,10 @@ class ExceptionIntervention
         }
     }
 
-    private function rewriteCodeAndMessageOnProductionEnvironment() : void
+    private function rewriteCodeAndMessageOnProductionEnvironment(): void
     {
         if ($this->isProductionEnvironment()) {
-            $this->code = 500;
+            $this->code    = 500;
             $this->message = 'Ошибка сервера';
         }
     }
@@ -149,9 +136,10 @@ class ExceptionIntervention
     /**
      * @return bool
      */
-    private function isShownExceptionInProduction() : bool
+    private function isShownExceptionInProduction(): bool
     {
-        $showInProduction = $this->config->get('exceptions', new Config())->get('showInProduction', [NoticeException::class, ]);
+        $showInProduction =
+            $this->config->get('exceptions', new Config())->get('showInProduction', [NoticeException::class,]);
         foreach ($showInProduction as $show) {
             if ($this->exception instanceof $show) {
                 return true;
@@ -164,7 +152,7 @@ class ExceptionIntervention
     /**
      * @return bool
      */
-    private function isProductionEnvironment() : bool
+    private function isProductionEnvironment(): bool
     {
         if ($this->productionEnvironment === true) {
             return true;
@@ -173,27 +161,27 @@ class ExceptionIntervention
         return false;
     }
 
-    private function sentryLogException() : void
+    private function sentryLogException(): void
     {
         $this->sentry->logException($this->exception, [], \Phalcon\Logger::ERROR);
     }
 
-    private function loggerLogError() : void
+    private function loggerLogError(): void
     {
-        $dontReport = $this->config->get('logger', new Config())->get('dontReport', [NoticeException::class, ]);
+        $dontReport = $this->config->get('logger', new Config())->get('dontReport', [NoticeException::class,]);
         foreach ($dontReport as $ignore) {
             if ($this->exception instanceof $ignore) {
                 return;
             }
         }
 
-        $this->logger->error($this->messageLog);
+        $this->logger->error($this->exception->getMessage(), ['exception' => $this->exception]);
     }
 
     /**
      * @return int
      */
-    public function getCode() : int
+    public function getCode(): int
     {
         return $this->code;
     }
@@ -201,7 +189,7 @@ class ExceptionIntervention
     /**
      * @return string
      */
-    public function getMessage() : string
+    public function getMessage(): string
     {
         return $this->message;
     }
@@ -222,7 +210,7 @@ class ExceptionIntervention
         return $this->data;
     }
 
-    public function setException(\Throwable $exception) : void
+    public function setException(\Throwable $exception): void
     {
         $this->exception = $exception;
     }
