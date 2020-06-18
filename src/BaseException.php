@@ -2,9 +2,10 @@
 
 namespace Chocofamily\Exception;
 
+use JsonSerializable;
 use Throwable;
 
-class BaseException extends \Exception implements RestAPIException
+class BaseException extends \Exception implements RestAPIException, JsonSerializable
 {
 
     /**
@@ -67,5 +68,48 @@ class BaseException extends \Exception implements RestAPIException
     public function getDebugAsString(): string
     {
         return print_r($this->debug, true);
+    }
+
+    /**
+     * @return array|mixed
+     */
+    public function jsonSerialize()
+    {
+        return [
+            $this->normalizeException($this),
+            [
+                'debug' => $this->getDebug(),
+                'data'  => $this->getData(),
+            ],
+        ];
+    }
+
+    /**
+     * @param Throwable $e
+     * @param int       $depth
+     *
+     * @return array
+     */
+    protected function normalizeException(Throwable $e, int $depth = 0)
+    {
+        $data = [
+            'class'   => \get_class($e),
+            'message' => $e->getMessage(),
+            'code'    => (int) $e->getCode(),
+            'file'    => $e->getFile().':'.$e->getLine(),
+        ];
+
+        $trace = $e->getTrace();
+        foreach ($trace as $frame) {
+            if (isset($frame['file'])) {
+                $data['trace'][] = $frame['file'].':'.$frame['line'];
+            }
+        }
+
+        if ($previous = $e->getPrevious()) {
+            $data['previous'] = $this->normalizeException($previous, $depth + 1);
+        }
+
+        return $data;
     }
 }
