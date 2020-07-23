@@ -36,11 +36,12 @@ class ApiExceptions extends Injectable
 
     public function __construct($app, $productionEnvironment = true)
     {
-        $this->app = $app;
-        $this->logger = $this->getDI()->get('logger');
-        $this->sentry = $this->getDI()->getShared('sentry');
+        $this->app                   = $app;
+        $this->logger                = $this->getDI()->get('logger');
+        $this->sentry                = $this->getDI()->getShared('sentry');
         $this->productionEnvironment = $productionEnvironment;
-        $this->exceptionIntervention = new ExceptionIntervention($this->isProductionEnvironment(), $this->logger, $this->sentry);
+        $this->exceptionIntervention =
+            new ExceptionIntervention($this->isProductionEnvironment(), $this->logger, $this->sentry);
     }
 
     /**
@@ -67,13 +68,29 @@ class ApiExceptions extends Injectable
      */
     public function handleExceptions(\Throwable $exception): array
     {
+        $this->report($exception);
+
+        return $this->render();
+    }
+
+    /**
+     * @param \Throwable $exception
+     */
+    public function report(\Throwable $exception)
+    {
         $this->exceptionIntervention->setException($exception);
         $this->exceptionIntervention->handle();
+    }
 
-        $code = $this->exceptionIntervention->getCode();
+    /**
+     * @return array
+     */
+    public function render(): array
+    {
+        $code    = $this->exceptionIntervention->getCode();
         $message = $this->exceptionIntervention->getMessage();
-        $debug = $this->exceptionIntervention->getDebug();
-        $data = $this->exceptionIntervention->getData();
+        $debug   = $this->exceptionIntervention->getDebug();
+        $data    = $this->exceptionIntervention->getData();
 
         return $this->apiResponse($code, $message, $debug, $data);
     }
@@ -109,9 +126,8 @@ class ApiExceptions extends Injectable
         string $message = 'Internal Server Error',
         array $debug = [],
         $data = []
-    ): array
-    {
-        $data = $this->setDataDebugInDevelopmentEnvironment($data, $debug);
+    ): array {
+        $data     = $this->setDataDebugInDevelopmentEnvironment($data, $debug);
         $response = $this->response($message, $data, $code, 'error');
 
         if ($this->isCliApplication()) {
@@ -131,6 +147,7 @@ class ApiExceptions extends Injectable
     /**
      * @param $data
      * @param $debug
+     *
      * @return mixed
      */
     private function setDataDebugInDevelopmentEnvironment($data, $debug)
@@ -172,6 +189,7 @@ class ApiExceptions extends Injectable
 
     /**
      * @param $data
+     *
      * @return |null
      */
     private function nullDataIfEmpty($data)
