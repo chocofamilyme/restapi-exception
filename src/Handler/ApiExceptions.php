@@ -88,11 +88,10 @@ class ApiExceptions extends Injectable
     public function render(): array
     {
         $code    = $this->exceptionIntervention->getCode();
-        $message = $this->exceptionIntervention->getMessage();
         $debug   = $this->exceptionIntervention->getDebug();
         $data    = $this->exceptionIntervention->getData();
 
-        return $this->apiResponse($code, $message, $debug, $data);
+        return $this->apiResponse($code, $debug, $data);
     }
 
     /**
@@ -121,18 +120,16 @@ class ApiExceptions extends Injectable
      *
      * @return array
      */
-    private function apiResponse(
-        int $code = 500,
-        string $message = 'Internal Server Error',
-        array $debug = [],
-        $data = []
-    ): array {
+    private function apiResponse(int $code = 500, array $debug = [], $data = []): array
+    {
         $data     = $this->setDataDebugInDevelopmentEnvironment($data, $debug);
-        $response = $this->response($message, $data, $code, 'error');
+        $response = $this->response($data);
+        $message  = http_response_code($code);
 
         if ($this->isCliApplication()) {
             print_r($response);
         } else {
+            $this->app->response->setStatusCode($code, $message);
             $this->app->response->setJsonContent($response);
             $this->app->response->send();
 
@@ -168,29 +165,23 @@ class ApiExceptions extends Injectable
     }
 
     /**
-     * @param string $message
-     * @param array  $data
-     * @param int    $error_code
-     * @param string $status
+     * @param array $data
      *
      * @return array
      */
-    public function response(string $message, $data = [], int $error_code = 0, string $status = 'success'): array
+    public function response($data = []): array
     {
         $data = $this->nullDataIfEmpty($data);
 
         return [
-            'error_code' => $error_code,
-            'status'     => $status,
-            'message'    => $message,
-            'data'       => $data,
+            'data' => $data,
         ];
     }
 
     /**
      * @param $data
      *
-     * @return |null
+     * @return mixed
      */
     private function nullDataIfEmpty($data)
     {
