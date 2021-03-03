@@ -105,7 +105,7 @@ class ExceptionIntervention
         if ($this->exception instanceof RestAPIException) {
             if ($debug = $this->exception->getDebug()) {
                 foreach ($debug as $key => $value) {
-                    if (false == empty($value)) {
+                    if (is_string($value)) {
                         $this->sentry->setTag($key, $value);
                     }
                 }
