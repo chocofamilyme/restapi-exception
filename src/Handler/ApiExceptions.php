@@ -190,7 +190,7 @@ class ApiExceptions extends Injectable
     /**
      * @param $data
      *
-     * @return |null
+     * @return mixed
      */
     private function nullDataIfEmpty($data)
     {
