@@ -89,7 +89,7 @@ class BaseException extends \Exception implements RestAPIException, JsonSerializ
      *
      * @return array
      */
-    protected function normalizeException(Throwable $e, int $depth = 0)
+    protected function normalizeException(Throwable $e, int $depth = 0): array
     {
         $data = [
             'class'   => \get_class($e),
