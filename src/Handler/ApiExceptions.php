@@ -13,13 +13,13 @@ use Phalcon\Logger\AdapterInterface;
  */
 class ApiExceptions extends Injectable
 {
-    /** @var  AdapterInterface */
+    /** @var AdapterInterface */
     private $logger;
 
     /** @var Sentry */
     private $sentry;
 
-    /** @var  bool */
+    /** @var bool */
     private $productionEnvironment;
 
     /**
