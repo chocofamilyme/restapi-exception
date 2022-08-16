@@ -9,7 +9,7 @@ use Phalcon\Logger\AdapterInterface;
 /**
  * Class ApiExceptions
  *
- * @package RestAPI\Exception\Handler
+ * @package Chocofamily\Exception\Handler
  */
 class ApiExceptions extends Injectable
 {
