@@ -154,11 +154,7 @@ class ExceptionIntervention
      */
     private function isProductionEnvironment(): bool
     {
-        if ($this->productionEnvironment === true) {
-            return true;
-        }
-
-        return false;
+        return $this->productionEnvironment === true;
     }
 
     private function sentryLogException(): void
