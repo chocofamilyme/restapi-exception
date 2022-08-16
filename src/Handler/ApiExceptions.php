@@ -206,11 +206,7 @@ class ApiExceptions extends Injectable
      */
     private function isDevelopmentEnvironment()
     {
-        if ($this->productionEnvironment === false) {
-            return true;
-        }
-
-        return false;
+        return $this->productionEnvironment === false;
     }
 
     /**
@@ -218,10 +214,6 @@ class ApiExceptions extends Injectable
      */
     private function isProductionEnvironment()
     {
-        if ($this->productionEnvironment === true) {
-            return true;
-        }
-
-        return false;
+        return $this->productionEnvironment === true;
     }
 }
