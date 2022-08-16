@@ -175,7 +175,7 @@ class ApiExceptions extends Injectable
      *
      * @return array
      */
-    public function response(string $message, $data, int $error_code, string $status): array
+    public function response(string $message, $data = [], int $error_code = 0, string $status = 'success'): array
     {
         $data = $this->nullDataIfEmpty($data);
 
