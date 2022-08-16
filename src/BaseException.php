@@ -70,7 +70,7 @@ class BaseException extends \Exception implements RestAPIException, JsonSerializ
     }
 
     /**
-     * @return array|mixed
+     * @return mixed
      */
     public function jsonSerialize()
     {
