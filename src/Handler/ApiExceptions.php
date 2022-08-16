@@ -162,7 +162,7 @@ class ApiExceptions extends Injectable
     /**
      * @return bool
      */
-    private function isCliApplication()
+    private function isCliApplication(): bool
     {
         return 'cli' == php_sapi_name();
     }
