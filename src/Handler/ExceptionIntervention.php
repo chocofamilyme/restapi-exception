@@ -159,7 +159,7 @@ class ExceptionIntervention
 
     private function sentryLogException(): void
     {
-        $this->sentry->logException($this->exception, [], \Phalcon\Logger::ERROR);
+        $this->sentry->logException($this->exception, \Phalcon\Logger::ERROR);
     }
 
     private function loggerLogError(): void
