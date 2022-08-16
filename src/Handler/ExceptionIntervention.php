@@ -128,7 +128,7 @@ class ExceptionIntervention
     private function rewriteCodeAndMessageOnProductionEnvironment(): void
     {
         if ($this->isProductionEnvironment()) {
-            $this->code    = 500;
+            $this->code    = self::DEFAULT_ERROR_CODE;
             $this->message = 'Ошибка сервера';
         }
     }
