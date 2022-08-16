@@ -9,17 +9,17 @@ use Phalcon\Logger\AdapterInterface;
 /**
  * Class ApiExceptions
  *
- * @package RestAPI\Exception\Handler
+ * @package Chocofamily\Exception\Handler
  */
 class ApiExceptions extends Injectable
 {
-    /** @var  AdapterInterface */
+    /** @var AdapterInterface */
     private $logger;
 
     /** @var Sentry */
     private $sentry;
 
-    /** @var  bool */
+    /** @var bool */
     private $productionEnvironment;
 
     /**
@@ -162,7 +162,7 @@ class ApiExceptions extends Injectable
     /**
      * @return bool
      */
-    private function isCliApplication()
+    private function isCliApplication(): bool
     {
         return 'cli' == php_sapi_name();
     }
@@ -190,7 +190,7 @@ class ApiExceptions extends Injectable
     /**
      * @param $data
      *
-     * @return |null
+     * @return mixed
      */
     private function nullDataIfEmpty($data)
     {
@@ -204,24 +204,16 @@ class ApiExceptions extends Injectable
     /**
      * @return bool
      */
-    private function isDevelopmentEnvironment()
+    private function isDevelopmentEnvironment(): bool
     {
-        if ($this->productionEnvironment === false) {
-            return true;
-        }
-
-        return false;
+        return $this->productionEnvironment === false;
     }
 
     /**
      * @return bool
      */
-    private function isProductionEnvironment()
+    private function isProductionEnvironment(): bool
     {
-        if ($this->productionEnvironment === true) {
-            return true;
-        }
-
-        return false;
+        return $this->productionEnvironment === true;
     }
 }

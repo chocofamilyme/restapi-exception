@@ -128,7 +128,7 @@ class ExceptionIntervention
     private function rewriteCodeAndMessageOnProductionEnvironment(): void
     {
         if ($this->isProductionEnvironment()) {
-            $this->code    = 500;
+            $this->code    = self::DEFAULT_ERROR_CODE;
             $this->message = 'Ошибка сервера';
         }
     }
@@ -154,16 +154,12 @@ class ExceptionIntervention
      */
     private function isProductionEnvironment(): bool
     {
-        if ($this->productionEnvironment === true) {
-            return true;
-        }
-
-        return false;
+        return $this->productionEnvironment === true;
     }
 
     private function sentryLogException(): void
     {
-        $this->sentry->logException($this->exception, [], \Phalcon\Logger::ERROR);
+        $this->sentry->logException($this->exception, \Phalcon\Logger::ERROR);
     }
 
     private function loggerLogError(): void

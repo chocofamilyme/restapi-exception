@@ -7,7 +7,6 @@ use Throwable;
 
 class BaseException extends \Exception implements RestAPIException, JsonSerializable
 {
-
     /**
      * @var array
      */
@@ -71,7 +70,7 @@ class BaseException extends \Exception implements RestAPIException, JsonSerializ
     }
 
     /**
-     * @return array|mixed
+     * @return mixed
      */
     public function jsonSerialize()
     {
@@ -90,12 +89,12 @@ class BaseException extends \Exception implements RestAPIException, JsonSerializ
      *
      * @return array
      */
-    protected function normalizeException(Throwable $e, int $depth = 0)
+    protected function normalizeException(Throwable $e, int $depth = 0): array
     {
         $data = [
             'class'   => \get_class($e),
             'message' => $e->getMessage(),
-            'code'    => (int) $e->getCode(),
+            'code'    => $e->getCode(),
             'file'    => $e->getFile().':'.$e->getLine(),
         ];
 
