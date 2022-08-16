@@ -7,7 +7,6 @@ use Throwable;
 
 class BaseException extends \Exception implements RestAPIException, JsonSerializable
 {
-
     /**
      * @var array
      */
