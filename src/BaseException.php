@@ -94,7 +94,7 @@ class BaseException extends \Exception implements RestAPIException, JsonSerializ
         $data = [
             'class'   => \get_class($e),
             'message' => $e->getMessage(),
-            'code'    => (int) $e->getCode(),
+            'code'    => $e->getCode(),
             'file'    => $e->getFile().':'.$e->getLine(),
         ];
 
